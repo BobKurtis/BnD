@@ -9,8 +9,8 @@ TODO:
 1. resize character
 2. limit movement based on stats
     - limit move to no diagonals 
+3. fill in background with map data
 '''
-
 
 # Import pygame.locals for easier access to key coordinates
 # Updated to conform to flake8 and black standards
@@ -26,8 +26,8 @@ from pygame.locals import (
 )
 
 # Define constants for the screen width and height
-SCREEN_WIDTH = 1920-192
-SCREEN_HEIGHT = 1080-108
+SCREEN_WIDTH = 1920 - 192
+SCREEN_HEIGHT = 1080 - 108
 
 
 # Define the enemy object by extending pygame.sprite.Sprite
@@ -77,105 +77,86 @@ class Cloud(pygame.sprite.Sprite):
             self.kill()
 
 
-# Initialize pygame
-pygame.init()
+class Game:
+    def __init__(self):
+        # Initialize pygame
+        pygame.init()
 
-# Create the screen object
-# The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        # Create the screen object
+        # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
-# Create a custom event for adding a new enemy and cloud
-ADDENEMY = pygame.USEREVENT + 1
-pygame.time.set_timer(ADDENEMY, 250)
-ADDCLOUD = pygame.USEREVENT + 2
-pygame.time.set_timer(ADDCLOUD, 1000)
-# Instantiate player.
-player = PlayableCharacter.Player((values.PlayerOne.HEALTH, values.PlayerOne.WISDOM, values.PlayerOne.STRESS))
-# Instantiate Stats Screen
-stats = StatsDisplay.Status()
+        # Instantiate player.
+        self.player = PlayableCharacter.Player((values.PlayerOne.HEALTH, values.PlayerOne.WISDOM, values.PlayerOne.STRESS))
+        # Instantiate Stats Screen
+        self.stats = StatsDisplay.Status()
 
-# Create groups to hold enemy sprites and all sprites
-# - enemies is used for collision detection and position updates
-# - all_sprites is used for rendering
-enemies = pygame.sprite.Group()
-clouds = pygame.sprite.Group()
-all_sprites = pygame.sprite.Group()
-all_sprites.add(player)
-all_sprites.add(player.status_display)
+        # Create groups to hold enemy sprites and all sprites
+        # - enemies is used for collision detection and position updates
+        # - all_sprites is used for rendering
+        enemies = pygame.sprite.Group()
+        clouds = pygame.sprite.Group()
+        self.all_sprites = pygame.sprite.Group()
+        self.all_sprites.add(self.player)
+        self.all_sprites.add(self.player.status_display)
 
-# Variable to keep the main loop running
-running = True
+        self.game_tick()
 
-# Set up the clock for a decent framerate
-clock = pygame.time.Clock()
+        # Load and play background music
+        # Sound source: http://ccmixter.org/files/Apoxode/59262
+        # License: https://creativecommons.org/licenses/by/3.0/
+        # pygame.mixer.music.load("music/Apoxode_-_Electric_1.mp3")
+        # pygame.mixer.music.play(loops=-1)
 
-# Load and play background music
-# Sound source: http://ccmixter.org/files/Apoxode/59262
-# License: https://creativecommons.org/licenses/by/3.0/
-pygame.mixer.music.load("music/Apoxode_-_Electric_1.mp3")
-pygame.mixer.music.play(loops=-1)
+    def game_tick(self):
+        # Variable to keep the main loop running
+        running = True
 
-collision_sound = pygame.mixer.Sound("music/Collision.ogg")
-# Main loop
-while running:
-    # for loop through the event queue
-    for event in pygame.event.get():
-        # Check for KEYDOWN event
-        if event.type == KEYDOWN:
-            # If the Esc key is pressed, then exit the main loop
-            if event.key == K_ESCAPE:
-                running = False
-        # Check for QUIT event. If QUIT, then set running to false.
-        elif event.type == QUIT:
-            running = False
-        # # Add a new enemy?
-        # elif event.type == ADDENEMY:
-        #     # Create the new enemy and add it to sprite groups
-        #     new_enemy = Enemy()
-        #     enemies.add(new_enemy)
-        #     all_sprites.add(new_enemy)
-        # Add a new cloud?
-        # elif event.type == ADDCLOUD:
-        #     # Create the new cloud and add it to sprite groups
-        #     new_cloud = Cloud()
-        #     clouds.add(new_cloud)
-        #     all_sprites.add(new_cloud)
+        # Set up the clock for a decent framerate
+        clock = pygame.time.Clock()
+        while running:
+            # for loop through the event queue
+            for event in pygame.event.get():
+                # Check for KEYDOWN event
+                if event.type == KEYDOWN:
+                    # If the Esc key is pressed, then exit the main loop
+                    if event.key == K_ESCAPE:
+                        running = False
+                # Check for QUIT event. If QUIT, then set running to false.
+                elif event.type == QUIT:
+                    running = False
 
-    # Get the set of keys pressed and check for user input
-    pressed_keys = pygame.key.get_pressed()
+            # Get the set of keys pressed and check for user input
+            pressed_keys = pygame.key.get_pressed()
 
-    # Update the player sprite based on user keypresses
-    player.update(pressed_keys)
+            # Update the player sprite based on user keypresses
+            self.player.update(pressed_keys)
 
-    # Update enemy position and render clouds
-    enemies.update()
-    clouds.update()
+            # Fill the screen with sky blue
+            self.screen.fill((135, 206, 250))
 
+            # Draw all sprites
+            for entity in self.all_sprites:
+                self.screen.blit(entity.surf, entity.rect)
 
-    # Fill the screen with sky blue
-    screen.fill((135, 206, 250))
+                # Check if any enemies have collided with the player
+                # if pygame.sprite.spritecollideany(self.player, enemies):
+                #     # If so, then remove the player and stop the loop
+                #     player.kill()
+                #     # Stop any moving sounds and play the collision sound
+                #     # move_up_sound.stop()
+                #     # move_down_sound.stop()
+                #     collision_sound.play()
+                #
+                #     running = False
 
-    # Draw all sprites
-    for entity in all_sprites:
-        screen.blit(entity.surf, entity.rect)
+            # Update the display
+            pygame.display.flip()
 
-    # Check if any enemies have collided with the player
-    if pygame.sprite.spritecollideany(player, enemies):
-        # If so, then remove the player and stop the loop
-        player.kill()
-        # Stop any moving sounds and play the collision sound
-        # move_up_sound.stop()
-        # move_down_sound.stop()
-        collision_sound.play()
+            # Ensure program maintains a rate of 30 frames per second
+            clock.tick(60)
 
-        running = False
-
-    # Update the display
-    pygame.display.flip()
-
-    # Ensure program maintains a rate of 30 frames per second
-    clock.tick(60)
-
-# All done! Stop and quit the mixer.
-pygame.mixer.music.stop()
-pygame.mixer.quit()
+        # All done! Stop and quit the mixer.
+        pygame.mixer.music.stop()
+        pygame.mixer.quit()
+Game()
