@@ -3,6 +3,7 @@ import random
 import Character.PlayableCharacter as PlayableCharacter
 import StatsDisplay
 import values.PlayerOne
+import map.MapSurfaceGenerator as MSG
 
 '''
 TODO:
@@ -87,18 +88,26 @@ class Game:
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
         # Instantiate player.
-        self.player = PlayableCharacter.Player((values.PlayerOne.HEALTH, values.PlayerOne.WISDOM, values.PlayerOne.STRESS))
+        self.player = PlayableCharacter.Player(
+            (values.PlayerOne.HEALTH, values.PlayerOne.WISDOM, values.PlayerOne.STRESS))
         # Instantiate Stats Screen
         self.stats = StatsDisplay.Status()
-
+        # Instantiate Background
+        self.background = MSG.MapSurfaceGenerator.generate(None, 1, './images/tilesets/1.png')
+        # MSG.MapSurfaceGenerator.generate(self, 1, './images/tilesets/1.png')
         # Create groups to hold enemy sprites and all sprites
         # - enemies is used for collision detection and position updates
         # - all_sprites is used for rendering
         enemies = pygame.sprite.Group()
         clouds = pygame.sprite.Group()
-        self.all_sprites = pygame.sprite.Group()
+        self.all_sprites = pygame.sprite.LayeredUpdates()
+        self.blocks = pygame.sprite.LayeredUpdates()
+        self.enemies = pygame.sprite.LayeredUpdates()
         self.all_sprites.add(self.player)
         self.all_sprites.add(self.player.status_display)
+        # self.all_sprites.add(self.surf)
+        # self.ground =
+        # self.screen.blit(MSG.MapSurfaceGenerator.generate(self, 1, './images/tilesets/1.png'), (100, 100))
 
         self.game_tick()
 
@@ -132,9 +141,9 @@ class Game:
             # Update the player sprite based on user keypresses
             self.player.update(pressed_keys)
 
-            # Fill the screen with sky blue
-            self.screen.fill((135, 206, 250))
-
+            # Fill the screen with sky blue or grab the map
+            # self.screen.fill((135, 206, 250))
+            self.screen.blit(self.background)
             # Draw all sprites
             for entity in self.all_sprites:
                 self.screen.blit(entity.surf, entity.rect)
@@ -153,10 +162,12 @@ class Game:
             # Update the display
             pygame.display.flip()
 
-            # Ensure program maintains a rate of 30 frames per second
+            # Ensure program maintains a rate of 60 frames per second
             clock.tick(60)
 
         # All done! Stop and quit the mixer.
         pygame.mixer.music.stop()
         pygame.mixer.quit()
+
+
 Game()
