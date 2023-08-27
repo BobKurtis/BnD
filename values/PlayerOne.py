@@ -1,3 +1,0 @@
-HEALTH = 10
-WISDOM = 8
-STRESS = 4
