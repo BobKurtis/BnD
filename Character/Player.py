@@ -126,7 +126,7 @@ class Player(pygame.sprite.Sprite):
                     self.rect.x = hits[0].rect.left - self.rect.width
                     if FOLLOW_CAM:
                         for sprite in self.game.all_sprites:
-                            sprite.rect.x += PLAYER_SPEED  # dont let the camera move when colliding
+                            sprite.rect.x += PLAYER_SPEED  # don't let the camera move when colliding
                 if self.x_change < 0:  # if moving left
                     self.rect.x = hits[0].rect.right
                     if FOLLOW_CAM:
