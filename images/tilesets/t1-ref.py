@@ -1,0 +1,1 @@
+# each tile chunk is 3 tiles x 3 tiles with size 32px

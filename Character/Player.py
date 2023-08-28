@@ -48,6 +48,8 @@ class Player(pygame.sprite.Sprite):
         # tell pygame the coords of our rectangle
         self.rect.x = self.x
         self.rect.y = self.y
+        # set up mask for pixel perfect collision detection
+        self.mask = pygame.mask.from_surface(self.image)
         # set our animations
         self.down_animations = [
             self.game.character_spritesheet[self.selected_character].get_sprite(3, 2, self.width, self.height),
@@ -117,6 +119,7 @@ class Player(pygame.sprite.Sprite):
 
     def collide_blocks(self, direction):
         if direction == "x":
+            # hits = self.mask.overlap(self.game.blocks.mask, (0, 0))
             hits = pygame.sprite.spritecollide(self, self.game.blocks, False)
             if hits:
                 if self.x_change > 0:  # if moving right

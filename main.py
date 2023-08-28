@@ -8,6 +8,7 @@ class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+        pygame.display.set_caption("BnD")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font('OpenSans.ttf', 32)
         self.running = True

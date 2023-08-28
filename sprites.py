@@ -304,12 +304,30 @@ class Block(pygame.sprite.Sprite):
         self.height = TILE_SIZE
 
         match tile_id:
-            case "T":
+            case 31:  # first tree on 3.png, and it's a double wide
                 self.image = self.game.terrain_spritesheet[1].get_sprite(0, 0, self.width*2, self.height*2)
-            case '1':
+            case 1:
                 self.image = self.game.terrain_spritesheet[2].get_sprite(5*self.width, 6*self.height, self.width, self.height)
-            case '2':
-                self.image = self.game.terrain_spritesheet[2].get_sprite(0, 0, self.width, self.height)
+            case 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21:  # water tiles from t1 1-3
+                match tile_id:
+                    case 13:
+                        self.image = self.game.terrain_spritesheet[2].get_sprite(0*TILE_SIZE, 3*TILE_SIZE, self.width, self.height)
+                    case 14:
+                        self.image = self.game.terrain_spritesheet[2].get_sprite(1*TILE_SIZE, 3*TILE_SIZE, self.width, self.height)
+                    case 15:
+                        self.image = self.game.terrain_spritesheet[2].get_sprite(2*TILE_SIZE, 3*TILE_SIZE, self.width, self.height)
+                    case 16:
+                        self.image = self.game.terrain_spritesheet[2].get_sprite(0*TILE_SIZE, 4*TILE_SIZE, self.width, self.height)
+                    case 17:
+                        self.image = self.game.terrain_spritesheet[2].get_sprite(1*TILE_SIZE, 4*TILE_SIZE, self.width, self.height)
+                    case 18:
+                        self.image = self.game.terrain_spritesheet[2].get_sprite(2*TILE_SIZE, 4*TILE_SIZE, self.width, self.height)
+                    case 19:
+                        self.image = self.game.terrain_spritesheet[2].get_sprite(0*TILE_SIZE, 5*TILE_SIZE, self.width, self.height)
+                    case 20:
+                        self.image = self.game.terrain_spritesheet[2].get_sprite(1*TILE_SIZE, 5*TILE_SIZE, self.width, self.height)
+                    case 21:
+                        self.image = self.game.terrain_spritesheet[2].get_sprite(2*TILE_SIZE, 5*TILE_SIZE, self.width, self.height)
             case '3':
                 self.image = self.game.terrain_spritesheet[2].get_sprite(0, 0, self.width, self.height)
             case '4':
@@ -332,6 +350,10 @@ class Block(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.x = self.x
         self.rect.y = self.y
+        # set up mask for pixel perfect collision
+        self.mask = pygame.mask.from_surface(self.image)
+        # if you want to see the mask
+        # self.mask_image = self.mask.to_surface()
 
 
 # class StatusDisplay(pygame.sprite.Sprite):
@@ -373,7 +395,7 @@ class Ground(pygame.sprite.Sprite):
         self.height = TILE_SIZE
         # self.image = self.game.terrain_spritesheet.get_sprite(64, 352, self.width, self.height)
         match sprite_to_grab:
-            case '.':
+            case 0:
                 self.image = self.game.terrain_spritesheet[0].get_sprite(64, 352, self.width, self.height)
             case _:  # default case
                 self.image = self.game.terrain_spritesheet[0].get_sprite(64, 352, self.width, self.height)
