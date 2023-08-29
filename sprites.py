@@ -352,6 +352,7 @@ class Block(pygame.sprite.Sprite):
         self.rect.y = self.y
         # set up mask for pixel perfect collision
         self.mask = pygame.mask.from_surface(self.image)
+        # self.mask_size = self.mask.get_size()
         # if you want to see the mask
         # self.mask_image = self.mask.to_surface()
 

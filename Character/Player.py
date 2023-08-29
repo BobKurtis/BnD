@@ -42,7 +42,7 @@ class Player(pygame.sprite.Sprite):
         # self.image.fill(RED) instead of filling with red we are going to place an image
         # select image and where to draw it on the surface
         # self.image.blit(image_to_load, (0, 0))
-        # self.image.set_colorkey(BLACK)
+        self.image.set_colorkey(BLACK)
         # rect is where its positioned and size like a hitbox
         self.rect = self.image.get_rect()  # setting hitbox to same size as image
         # tell pygame the coords of our rectangle
@@ -50,26 +50,27 @@ class Player(pygame.sprite.Sprite):
         self.rect.y = self.y
         # set up mask for pixel perfect collision detection
         self.mask = pygame.mask.from_surface(self.image)
+        # self.mask_size = self.mask.get_size()
         # set our animations
         self.down_animations = [
-            self.game.character_spritesheet[self.selected_character].get_sprite(3, 2, self.width, self.height),
-            self.game.character_spritesheet[self.selected_character].get_sprite(35, 2, self.width, self.height),
-            self.game.character_spritesheet[self.selected_character].get_sprite(68, 2, self.width, self.height)]
+            self.game.character_spritesheet[self.selected_character].get_sprite(0, 0, self.width, self.height),
+            self.game.character_spritesheet[self.selected_character].get_sprite(32, 0, self.width, self.height),
+            self.game.character_spritesheet[self.selected_character].get_sprite(64, 0, self.width, self.height)]
 
         self.left_animations = [
-            self.game.character_spritesheet[self.selected_character].get_sprite(3, 34, self.width, self.height),
-            self.game.character_spritesheet[self.selected_character].get_sprite(35, 34, self.width, self.height),
-            self.game.character_spritesheet[self.selected_character].get_sprite(68, 34, self.width, self.height)]
-
-        self.up_animations = [
-            self.game.character_spritesheet[self.selected_character].get_sprite(3, 98, self.width, self.height),
-            self.game.character_spritesheet[self.selected_character].get_sprite(35, 98, self.width, self.height),
-            self.game.character_spritesheet[self.selected_character].get_sprite(68, 98, self.width, self.height)]
+            self.game.character_spritesheet[self.selected_character].get_sprite(0, 32, self.width, self.height),
+            self.game.character_spritesheet[self.selected_character].get_sprite(32, 32, self.width, self.height),
+            self.game.character_spritesheet[self.selected_character].get_sprite(64, 32, self.width, self.height)]
 
         self.right_animations = [
-            self.game.character_spritesheet[self.selected_character].get_sprite(3, 66, self.width, self.height),
-            self.game.character_spritesheet[self.selected_character].get_sprite(35, 66, self.width, self.height),
-            self.game.character_spritesheet[self.selected_character].get_sprite(68, 66, self.width, self.height)]
+            self.game.character_spritesheet[self.selected_character].get_sprite(0, 64, self.width, self.height),
+            self.game.character_spritesheet[self.selected_character].get_sprite(32, 64, self.width, self.height),
+            self.game.character_spritesheet[self.selected_character].get_sprite(64, 64, self.width, self.height)]
+
+        self.up_animations = [
+            self.game.character_spritesheet[self.selected_character].get_sprite(0, 96, self.width, self.height),
+            self.game.character_spritesheet[self.selected_character].get_sprite(32, 96, self.width, self.height),
+            self.game.character_spritesheet[self.selected_character].get_sprite(64, 96, self.width, self.height)]
 
         self.status = {'health': 8, 'wisdom': 7, 'stress': 6, 'speed': 50}
         # pass game, x y coords and the status to apply
@@ -79,12 +80,13 @@ class Player(pygame.sprite.Sprite):
         self.movement()
         self.animate()
         self.collide_enemy()
+        self.collide_block_bool()
         self.rect.x += self.x_change
         # check for collision along x-axis
-        self.collide_blocks('x')
+        # self.collide_blocks('x')
         self.rect.y += self.y_change
         # check for collision along y-axis
-        self.collide_blocks('y')
+        # self.collide_blocks('y')
 
         self.x_change = 0
         self.y_change = 0
@@ -117,23 +119,94 @@ class Player(pygame.sprite.Sprite):
             self.y_change += PLAYER_SPEED
             self.facing = 'down'
 
+    def collide_block_bool(self):
+        hits = pygame.sprite.spritecollide(self, self.game.blocks, False, pygame.sprite.collide_mask)
+        for idx, x in enumerate(hits):
+            offset_x = hits[idx].rect.x - self.rect.x
+            offset_y = hits[idx].rect.y - self.rect.y
+            self.jitter = hits[0].mask.overlap(self.mask, (offset_x, offset_y))
+            if self.jitter is not None:
+                if offset_x > 0:
+                    #jitter to the left
+                    print("Jitter Left"+str(offset_x)+","+str(offset_y))
+                    self.x_change -= 1
+                if offset_x < 0:
+                    #jitter to the left
+                    print("Jitter right"+str(offset_x)+","+str(offset_y))
+                    self.x_change += 1
+                if offset_y > 0:
+                    #jitter up
+                    print("Jitter up"+str(offset_x)+","+str(offset_y))
+                    self.y_change -= 1
+                if offset_y < 0:
+                    #jitter down
+                    print("Jitter down"+str(offset_x)+","+str(offset_y))
+                    self.y_change += 1
+
+
+            # match direction:
+            #     case "right":
+            #         offset = (int(hits[0].x), int(hits[0].y))
+            #         # self.thing = self.mask.overlap(hits[0].mask, (0,0))
+            #         self.jitter = hits[0].mask.overlap(self.mask, (0, 0))
+            #         if self.jitter is not None:
+            #             print("Jitter Left")
+            #             # bump the character to the left
+            #             self.x_change -= 6
+            #     case "left":
+            #         offset = (int(hits[0].x), int(hits[0].y))
+            #         self.jitter = hits[0].mask.overlap(self.mask, (0, 0))
+            #         if self.jitter is not None:
+            #             print("Jitter Right")
+            #             # bump the character to the left
+            #             self.x_change += 3
+            #             # update the mask
+            #     case "up":
+            #         offset = (int(hits[0].x), int(hits[0].y))
+            #         self.jitter = hits[0].mask.overlap(self.mask, (0, 0))
+            #
+            #         if self.jitter is not None:
+            #             print("Jitter Down")
+            #             # bump the character to the left
+            #             self.y_change += 3
+            #     case "down":
+            #         offset = (int(hits[0].x), int(hits[0].y))
+            #         self.jitter = hits[0].mask.overlap(self.mask, (0, 0))
+            #
+            #         if self.jitter is not None:
+            #             print("Jitter Up")
+            #             # bump the character to the left
+            #             self.y_change -= 2
+        # return hits
+
     def collide_blocks(self, direction):
         if direction == "x":
-            # hits = self.mask.overlap(self.game.blocks.mask, (0, 0))
-            hits = pygame.sprite.spritecollide(self, self.game.blocks, False)
+            # if self.mask.overlap(self.game.blocks, (0, 0)):
+            #     print("Masks collide")
+            # do retangle collision first to save memeory
+            hits = pygame.sprite.spritecollide(self, self.game.blocks, False, pygame.sprite.collide_mask)
             if hits:
-                if self.x_change > 0:  # if moving right
-                    self.rect.x = hits[0].rect.left - self.rect.width
-                    if FOLLOW_CAM:
-                        for sprite in self.game.all_sprites:
-                            sprite.rect.x += PLAYER_SPEED  # don't let the camera move when colliding
-                if self.x_change < 0:  # if moving left
-                    self.rect.x = hits[0].rect.right
-                    if FOLLOW_CAM:
-                        for sprite in self.game.all_sprites:
-                            sprite.rect.x -= PLAYER_SPEED
+                # now see if the masks intersect and where
+
+                try:
+                    self.overlap_x, self.overlap_y = hits[0].mask.overlap(self.mask, (0, 0))
+                    # print(self.overlap_x+", "+self.overlap_y)
+                    # (self.overlap_x, self.overlap_y) = self.mask.overlap(hits[0].mask, (0, 0))
+                    if self.x_change > 0:  # if moving right
+                        self.rect.x = hits[0].rect.left - hits[0].mask.x
+                        if FOLLOW_CAM:
+                            for sprite in self.game.all_sprites:
+                                sprite.rect.x += PLAYER_SPEED  # don't let the camera move when colliding
+                    if self.x_change < 0:  # if moving left
+                        self.rect.x = hits[0].rect.right + 15
+                        if FOLLOW_CAM:
+                            for sprite in self.game.all_sprites:
+                                sprite.rect.x -= PLAYER_SPEED
+                except Exception:
+                    pass
+
         if direction == "y":
-            hits = pygame.sprite.spritecollide(self, self.game.blocks, False)
+            hits = pygame.sprite.spritecollide(self, self.game.blocks, False, pygame.sprite.collide_mask)
             if hits:
                 if self.y_change > 0:  # if moving down
                     self.rect.y = hits[0].rect.top - self.rect.height
