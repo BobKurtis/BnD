@@ -1,9 +1,11 @@
+from Character import Character as character_generator
 from Character.Player import Player
 from sprites import *
 from values.config import *
 import sys
 import CreateTilemap
 import pygame
+
 
 class Game:
     def __init__(self):
@@ -14,18 +16,23 @@ class Game:
         self.font = pygame.font.Font('OpenSans.ttf', 32)
         self.running = True
 
+        # load the characters in
+        self.character_file_list = []
+        self.character_select_name_from_list = []
+        self.load_characters()
+
         # Character Sprites Files List
-        character_file_list = ['images/Character Sprite Sheet Collection/Male/Male 09-1.png',
-                               'images/Character Sprite Sheet Collection/Female/Female 02-1.png',
-                               'images/Character Sprite Sheet Collection/Other/pipo-charachip_otaku01.png',
-                               'images/Character Sprite Sheet Collection/Male/Male 14-1.png']
+        # self.character_file_list = ['images/Character Sprite Sheet Collection/Male/Male 09-1.png',
+        #                        'images/Character Sprite Sheet Collection/Female/Female 02-1.png',
+        #                        'images/Character Sprite Sheet Collection/Other/pipo-charachip_otaku01.png',
+        #                        'images/Character Sprite Sheet Collection/Male/Male 14-1.png']
         terrain_file_list = ['img/terrain.png',
                              'images/tilesets/3.png',
                              'images/tilesets/1.png']
         self.terrain_spritesheet = []
         self.character_spritesheet = []
         # turn character spritesheet into a list
-        for count, character in enumerate(character_file_list):
+        for count, character in enumerate(self.character_file_list):
             self.character_spritesheet.append(Spritesheet(character))
         # turn terrain spritesheet into a list
         for count, terrain in enumerate(terrain_file_list):
@@ -38,23 +45,13 @@ class Game:
         self.intro_background = pygame.image.load('images/bnd background large.jpeg')
         self.go_background = pygame.image.load('img/gameover.png')
 
-    # def createTilemap(self):
-    #     for i, row in enumerate(tilemap):
-    #         for j, column in enumerate(row):
-    #             Ground(self, j, i)
-    #             if column == "B":
-    #                 Block(self, j, i)
-    #             if column == "E":
-    #                 Enemy(self, j, i)
-    #             # if column == "S":
-    #             #     StatusDisplay(self, j, i)
     def character_selected(self, selected_character):
-       if selected_character not in self.selected_characters_to_play:
-           # add character
-           self.selected_characters_to_play.append(selected_character)
-       else:
-           # remove character
-           self.selected_characters_to_play.remove(selected_character)
+        if selected_character not in self.selected_characters_to_play:
+            # add character
+            self.selected_characters_to_play.append(selected_character)
+        else:
+            # remove character
+            self.selected_characters_to_play.remove(selected_character)
 
     def new(self, selected_players):
         # a new game starts
@@ -69,7 +66,7 @@ class Game:
             health = random.randint(0, 10)
             wisdom = random.randint(0, 10)
             stress = random.randint(0, 10)
-            self.player = Player(self, idx+5, idx+12, [health, wisdom, stress], player)
+            self.player = Player(self, idx + 5, idx + 12, [health, wisdom, stress], player)
 
         self.tile_map_creator = CreateTilemap
         # self.createTilemap()
@@ -144,19 +141,21 @@ class Game:
         title = self.font.render('BnD', True, BLACK)
         title_rect = title.get_rect(x=self.screen.get_width() / 3, y=self.screen.get_width() / 3)
         party_text_surface = pygame.Surface((100, 100))
-        party_text_surface.fill(BLACK)
-        party_text_display = self.font.render('Party Members:'+"\n".join(self.selected_characters_to_play), True, BLACK)
+        # party_text_surface.fill(BLACK)
+        party_text_display = self.font.render('Party Members:' + "\n".join(self.selected_characters_to_play), True,
+                                              BLACK)
         party_text_display_rect = party_text_display.get_rect(x=400, y=0)
         party_text_surface.blit(party_text_display, party_text_display_rect)
         self.character_select_id = 0
-        character_select_from_list = ['Anthor', 'Ravamoira', 'Shawnathan', 'Kyle']
-        self.selected_character_name = character_select_from_list[self.character_select_id]
-        self.selected_character_display = self.font.render(("Add to Party: " + self.selected_character_name), True, BLACK)
+
+        self.selected_character_name = self.character_select_name_from_list[self.character_select_id]
+        self.selected_character_display = self.font.render(("Add to Party: " + self.selected_character_name), True,
+                                                           BLACK)
         self.selected_character_display_rect = self.selected_character_display.get_rect(x=self.screen.get_width() / 2,
                                                                                         y=self.screen.get_width() / 5)
         play_button = Button(10, 50, 100, 50, WHITE, BLACK, 'Play', 32)
         cycle_character_button = Button(10, 120, 300, 50, WHITE, BLACK, 'Toggle Character', 32)
-        add_character_to_party_button = Button(10, 180, 300, 50, WHITE, BLACK, 'Add Character to Party',32)
+        add_character_to_party_button = Button(10, 180, 400, 50, WHITE, BLACK, 'Add Character to Party', 32)
         while intro:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -175,7 +174,7 @@ class Game:
                 # build string for party list
                 temp_party_text = ""
                 for character in self.selected_characters_to_play:
-                    temp_party_text += "\n"+str(character_select_from_list[character])
+                    temp_party_text += "\n" + str(self.character_select_name_from_list[character])
 
                 party_text_display = self.font.render('Party Members:' + temp_party_text,
                                                       True, BLACK)
@@ -183,12 +182,12 @@ class Game:
             if cycle_character_button.is_pressed(mouse_pos, mouse_pressed):
                 # get the next character
                 self.character_select_id += 1
-                if self.character_select_id > len(character_select_from_list) - 1:
+                if self.character_select_id > len(self.character_select_name_from_list) - 1:
                     # round-robin
                     self.character_select_id = 0
-                    self.selected_character_name = character_select_from_list[self.character_select_id]
+                    self.selected_character_name = self.character_select_name_from_list[self.character_select_id]
                 else:
-                    self.selected_character_name = character_select_from_list[self.character_select_id]
+                    self.selected_character_name = self.character_select_name_from_list[self.character_select_id]
 
                 # update the character display
                 self.selected_character_display = self.font.render(("Playing As: " + self.selected_character_name),
@@ -201,8 +200,18 @@ class Game:
             self.screen.blit(add_character_to_party_button.image, add_character_to_party_button.rect)
             self.screen.blit(party_text_display, party_text_display_rect)
             self.screen.blit(self.selected_character_display, self.selected_character_display_rect)
-            self.clock.tick(FPS/6)
+            self.clock.tick(FPS / 6)
             pygame.display.update()
+
+    def load_characters(self):
+        for character in characterMap:
+
+            # apply dict to values
+            character = character_generator.Character.create_new_character(self, character)
+            # load the spritesheets in
+            self.character_file_list.append(character.get('sprite_file'))
+            # build name list for intro
+            self.character_select_name_from_list.append(character.get('name'))
 
 
 g = Game()
