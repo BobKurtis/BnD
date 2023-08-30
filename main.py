@@ -1,173 +1,225 @@
+from Character import Character as character_generator
+from Character.Player import Player
+from sprites import *
+from values.config import *
+import sys
+import CreateTilemap
 import pygame
-import random
-import Character.PlayableCharacter as PlayableCharacter
-import StatsDisplay
-import values.PlayerOne
-import map.MapSurfaceGenerator as MSG
-
-'''
-TODO:
-1. resize character
-2. limit movement based on stats
-    - limit move to no diagonals 
-3. fill in background with map data
-'''
-
-# Import pygame.locals for easier access to key coordinates
-# Updated to conform to flake8 and black standards
-from pygame.locals import (
-    RLEACCEL,
-    K_UP,
-    K_DOWN,
-    K_LEFT,
-    K_RIGHT,
-    K_ESCAPE,
-    KEYDOWN,
-    QUIT,
-)
-
-# Define constants for the screen width and height
-SCREEN_WIDTH = 1920 - 192
-SCREEN_HEIGHT = 1080 - 108
-
-
-# Define the enemy object by extending pygame.sprite.Sprite
-# The surface you draw on the screen is now an attribute of 'enemy'
-class Enemy(pygame.sprite.Sprite):
-    def __init__(self):
-        super(Enemy, self).__init__()
-        self.surf = pygame.image.load("images/missile.png").convert()
-        self.surf.set_colorkey((255, 255, 255), RLEACCEL)
-        # The starting position is randomly generated, as is the speed
-        self.rect = self.surf.get_rect(
-            center=(
-                random.randint(SCREEN_WIDTH + 20, SCREEN_WIDTH + 100),
-                random.randint(0, SCREEN_HEIGHT),
-            )
-        )
-        self.speed = random.randint(5, 20)
-
-    # Move the sprite based on speed
-    # Remove the sprite when it passes the left edge of the screen
-    def update(self):
-        self.rect.move_ip(-self.speed, 0)
-        if self.rect.right < 0:
-            self.kill()
-
-
-# Define the cloud object by extending pygame.sprite.Sprite
-# Use an image for a better-looking sprite
-class Cloud(pygame.sprite.Sprite):
-    def __init__(self):
-        super(Cloud, self).__init__()
-        self.surf = pygame.image.load("images/cloud.png").convert()
-        self.surf.set_colorkey((0, 0, 0), RLEACCEL)
-        # The starting position is randomly generated
-        self.rect = self.surf.get_rect(
-            center=(
-                random.randint(SCREEN_WIDTH + 20, SCREEN_WIDTH + 100),
-                random.randint(0, SCREEN_HEIGHT),
-            )
-        )
-
-    # Move the cloud based on a constant speed
-    # Remove the cloud when it passes the left edge of the screen
-    def update(self):
-        self.rect.move_ip(-5, 0)
-        if self.rect.right < 0:
-            self.kill()
 
 
 class Game:
     def __init__(self):
-        # Initialize pygame
         pygame.init()
+        self.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
+        pygame.display.set_caption("BnD")
+        self.clock = pygame.time.Clock()
+        self.font = pygame.font.Font('OpenSans.ttf', 32)
+        self.running = True
 
-        # Create the screen object
-        # The size is determined by the constant SCREEN_WIDTH and SCREEN_HEIGHT
-        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        # load the characters in
+        self.character_file_list = []
+        self.character_select_name_from_list = []
+        self.load_characters()
 
-        # Instantiate player.
-        self.player = PlayableCharacter.Player(
-            (values.PlayerOne.HEALTH, values.PlayerOne.WISDOM, values.PlayerOne.STRESS))
-        # Instantiate Stats Screen
-        self.stats = StatsDisplay.Status()
-        # Instantiate Background
-        self.background = MSG.MapSurfaceGenerator.generate(None, 1, './images/tilesets/1.png')
-        # MSG.MapSurfaceGenerator.generate(self, 1, './images/tilesets/1.png')
-        # Create groups to hold enemy sprites and all sprites
-        # - enemies is used for collision detection and position updates
-        # - all_sprites is used for rendering
-        enemies = pygame.sprite.Group()
-        clouds = pygame.sprite.Group()
+        # Character Sprites Files List
+        # self.character_file_list = ['images/Character Sprite Sheet Collection/Male/Male 09-1.png',
+        #                        'images/Character Sprite Sheet Collection/Female/Female 02-1.png',
+        #                        'images/Character Sprite Sheet Collection/Other/pipo-charachip_otaku01.png',
+        #                        'images/Character Sprite Sheet Collection/Male/Male 14-1.png']
+        terrain_file_list = ['img/terrain.png',
+                             'images/tilesets/3.png',
+                             'images/tilesets/1.png']
+        self.terrain_spritesheet = []
+        self.character_spritesheet = []
+        # turn character spritesheet into a list
+        for count, character in enumerate(self.character_file_list):
+            self.character_spritesheet.append(Spritesheet(character))
+        # turn terrain spritesheet into a list
+        for count, terrain in enumerate(terrain_file_list):
+            self.terrain_spritesheet.append(Spritesheet(terrain))
+        self.selected_characters_to_play = []
+        # self.terrain_spritesheet = Spritesheet('img/terrain.png')
+        self.enemy_spritesheet = Spritesheet('img/enemy.png')
+        self.attack_spritesheet = Spritesheet('img/attack.png')
+        # self.intro_background = pygame.image.load('img/introbackground.png')
+        self.intro_background = pygame.image.load('images/bnd background large.jpeg')
+        self.go_background = pygame.image.load('img/gameover.png')
+
+    def character_selected(self, selected_character):
+        if selected_character not in self.selected_characters_to_play:
+            # add character
+            self.selected_characters_to_play.append(selected_character)
+        else:
+            # remove character
+            self.selected_characters_to_play.remove(selected_character)
+
+    def new(self, selected_players):
+        # a new game starts
+        self.playing = True
+        # will contain all the sprites in the game Characters, walls everything
         self.all_sprites = pygame.sprite.LayeredUpdates()
         self.blocks = pygame.sprite.LayeredUpdates()
         self.enemies = pygame.sprite.LayeredUpdates()
-        self.all_sprites.add(self.player)
-        self.all_sprites.add(self.player.status_display)
-        # self.all_sprites.add(self.surf)
-        # self.ground =
-        # self.screen.blit(MSG.MapSurfaceGenerator.generate(self, 1, './images/tilesets/1.png'), (100, 100))
+        self.attacks = pygame.sprite.LayeredUpdates()
 
-        self.game_tick()
+        for idx, player in enumerate(selected_players):
+            health = random.randint(0, 10)
+            wisdom = random.randint(0, 10)
+            stress = random.randint(0, 10)
+            self.player = Player(self, idx + 5, idx + 12, [health, wisdom, stress], player)
 
-        # Load and play background music
-        # Sound source: http://ccmixter.org/files/Apoxode/59262
-        # License: https://creativecommons.org/licenses/by/3.0/
-        # pygame.mixer.music.load("music/Apoxode_-_Electric_1.mp3")
-        # pygame.mixer.music.play(loops=-1)
+        self.tile_map_creator = CreateTilemap
+        # self.createTilemap()
+        # self.createTilemap = self.CreateTileMap.createTilemap(self)
+        self.tile_map_creator.CreateTileMap.createTilemap(self)
 
-    def game_tick(self):
-        # Variable to keep the main loop running
-        running = True
+    def events(self):
+        # game loop events
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.playing = False
+                self.running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    if self.player.facing == 'up':
+                        Attack(self, self.player.rect.x, self.player.rect.y - TILE_SIZE)
+                    if self.player.facing == 'down':
+                        Attack(self, self.player.rect.x, self.player.rect.y + TILE_SIZE)
+                    if self.player.facing == 'left':
+                        Attack(self, self.player.rect.x - TILE_SIZE, self.player.rect.y)
+                    if self.player.facing == 'right':
+                        Attack(self, self.player.rect.x + TILE_SIZE, self.player.rect.y)
 
-        # Set up the clock for a decent framerate
-        clock = pygame.time.Clock()
-        while running:
-            # for loop through the event queue
+    def update(self):
+        # game loop updates
+        # this will look into all the sprites in the group and find their update method and run it
+        self.all_sprites.update()
+
+    def draw(self):
+        # game draw loop
+        self.screen.fill(BLACK)
+        # looks through all sprites in the group finds the image and the rect and draws them on the screen
+        self.all_sprites.draw(self.screen)
+        self.clock.tick(FPS)
+        pygame.display.update()
+
+    def main(self):
+        # game loop
+        while self.playing:
+            # listen to what's happening
+            self.events()
+            # react to what you heard
+            self.update()
+            # tell the screen to respond
+            self.draw()
+
+    def game_over(self):
+        text = self.font.render('Game Over', True, WHITE)
+        text_rect = text.get_rect(center=(WIN_WIDTH / 2, WIN_HEIGHT / 2))
+
+        restart_button = Button(10, WIN_HEIGHT - 60, 120, 50, WHITE, BLACK, 'Restart', 32)
+        for sprite in self.all_sprites:  # go through all sprites and remove them
+            sprite.kill()
+        while self.running:
             for event in pygame.event.get():
-                # Check for KEYDOWN event
-                if event.type == KEYDOWN:
-                    # If the Esc key is pressed, then exit the main loop
-                    if event.key == K_ESCAPE:
-                        running = False
-                # Check for QUIT event. If QUIT, then set running to false.
-                elif event.type == QUIT:
-                    running = False
+                if event.type == pygame.QUIT:
+                    self.running = False
+            mouse_pos = pygame.mouse.get_pos()
+            mouse_pressed = pygame.mouse.get_pressed()
 
-            # Get the set of keys pressed and check for user input
-            pressed_keys = pygame.key.get_pressed()
+            if restart_button.is_pressed(mouse_pos, mouse_pressed):
+                self.new()
+                self.main()
+            self.screen.blit(self.go_background, (0, 0))
+            self.screen.blit(text, text_rect)
+            self.screen.blit(restart_button.image, restart_button.rect)
+            self.clock.tick(FPS)
+            pygame.display.update()
 
-            # Update the player sprite based on user keypresses
-            self.player.update(pressed_keys)
+    def intro_screen(self):
+        intro = True
+        title = self.font.render('BnD', True, BLACK)
+        title_rect = title.get_rect(x=self.screen.get_width() / 3, y=self.screen.get_width() / 3)
+        party_text_surface = pygame.Surface((100, 100))
+        # party_text_surface.fill(BLACK)
+        party_text_display = self.font.render('Party Members:' + "\n".join(self.selected_characters_to_play), True,
+                                              BLACK)
+        party_text_display_rect = party_text_display.get_rect(x=400, y=0)
+        party_text_surface.blit(party_text_display, party_text_display_rect)
+        self.character_select_id = 0
 
-            # Fill the screen with sky blue or grab the map
-            # self.screen.fill((135, 206, 250))
-            self.screen.blit(self.background)
-            # Draw all sprites
-            for entity in self.all_sprites:
-                self.screen.blit(entity.surf, entity.rect)
+        self.selected_character_name = self.character_select_name_from_list[self.character_select_id]
+        self.selected_character_display = self.font.render(("Add to Party: " + self.selected_character_name), True,
+                                                           BLACK)
+        self.selected_character_display_rect = self.selected_character_display.get_rect(x=self.screen.get_width() / 2,
+                                                                                        y=self.screen.get_width() / 5)
+        play_button = Button(10, 50, 100, 50, WHITE, BLACK, 'Play', 32)
+        cycle_character_button = Button(10, 120, 300, 50, WHITE, BLACK, 'Toggle Character', 32)
+        add_character_to_party_button = Button(10, 180, 400, 50, WHITE, BLACK, 'Add Character to Party', 32)
+        while intro:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    intro = False
+                    self.running = False
+            mouse_pos = pygame.mouse.get_pos()
+            mouse_pressed = pygame.mouse.get_pressed()
+            if play_button.is_pressed(mouse_pos, mouse_pressed):
+                intro = False
+                # character_selected = 1
+                self.selected_characters_to_play
+                g.new(self.selected_characters_to_play)
+            if add_character_to_party_button.is_pressed(mouse_pos, mouse_pressed):
+                print("cycling character on party list")
+                g.character_selected(self.character_select_id)
+                # build string for party list
+                temp_party_text = ""
+                for character in self.selected_characters_to_play:
+                    temp_party_text += "\n" + str(self.character_select_name_from_list[character])
 
-                # Check if any enemies have collided with the player
-                # if pygame.sprite.spritecollideany(self.player, enemies):
-                #     # If so, then remove the player and stop the loop
-                #     player.kill()
-                #     # Stop any moving sounds and play the collision sound
-                #     # move_up_sound.stop()
-                #     # move_down_sound.stop()
-                #     collision_sound.play()
-                #
-                #     running = False
+                party_text_display = self.font.render('Party Members:' + temp_party_text,
+                                                      True, BLACK)
 
-            # Update the display
-            pygame.display.flip()
+            if cycle_character_button.is_pressed(mouse_pos, mouse_pressed):
+                # get the next character
+                self.character_select_id += 1
+                if self.character_select_id > len(self.character_select_name_from_list) - 1:
+                    # round-robin
+                    self.character_select_id = 0
+                    self.selected_character_name = self.character_select_name_from_list[self.character_select_id]
+                else:
+                    self.selected_character_name = self.character_select_name_from_list[self.character_select_id]
 
-            # Ensure program maintains a rate of 60 frames per second
-            clock.tick(60)
+                # update the character display
+                self.selected_character_display = self.font.render(("Playing As: " + self.selected_character_name),
+                                                                   True, BLACK)
 
-        # All done! Stop and quit the mixer.
-        pygame.mixer.music.stop()
-        pygame.mixer.quit()
+            self.screen.blit(self.intro_background, (0, 0))
+            self.screen.blit(title, title_rect)
+            self.screen.blit(play_button.image, play_button.rect)
+            self.screen.blit(cycle_character_button.image, cycle_character_button.rect)
+            self.screen.blit(add_character_to_party_button.image, add_character_to_party_button.rect)
+            self.screen.blit(party_text_display, party_text_display_rect)
+            self.screen.blit(self.selected_character_display, self.selected_character_display_rect)
+            self.clock.tick(FPS / 6)
+            pygame.display.update()
+
+    def load_characters(self):
+        for character in characterMap:
+
+            # apply dict to values
+            character = character_generator.Character.create_new_character(self, character)
+            # load the spritesheets in
+            self.character_file_list.append(character.get('sprite_file'))
+            # build name list for intro
+            self.character_select_name_from_list.append(character.get('name'))
 
 
-Game()
+g = Game()
+g.intro_screen()
+# g.new()
+while g.running:
+    g.main()
+    g.game_over()
+
+pygame.quit()
+sys.exit()
