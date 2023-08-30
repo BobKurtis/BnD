@@ -3,6 +3,7 @@ from sprites import *
 from values.config import *
 import sys
 import CreateTilemap
+import pygame
 
 class Game:
     def __init__(self):
@@ -29,6 +30,7 @@ class Game:
         # turn terrain spritesheet into a list
         for count, terrain in enumerate(terrain_file_list):
             self.terrain_spritesheet.append(Spritesheet(terrain))
+        self.selected_characters_to_play = []
         # self.terrain_spritesheet = Spritesheet('img/terrain.png')
         self.enemy_spritesheet = Spritesheet('img/enemy.png')
         self.attack_spritesheet = Spritesheet('img/attack.png')
@@ -46,8 +48,15 @@ class Game:
     #                 Enemy(self, j, i)
     #             # if column == "S":
     #             #     StatusDisplay(self, j, i)
+    def character_selected(self, selected_character):
+       if selected_character not in self.selected_characters_to_play:
+           # add character
+           self.selected_characters_to_play.append(selected_character)
+       else:
+           # remove character
+           self.selected_characters_to_play.remove(selected_character)
 
-    def new(self, selected_player):
+    def new(self, selected_players):
         # a new game starts
         self.playing = True
         # will contain all the sprites in the game Characters, walls everything
@@ -56,7 +65,11 @@ class Game:
         self.enemies = pygame.sprite.LayeredUpdates()
         self.attacks = pygame.sprite.LayeredUpdates()
 
-        self.player = Player(self, 5, 12, [10, 8, 5], selected_player)
+        for idx, player in enumerate(selected_players):
+            health = random.randint(0, 10)
+            wisdom = random.randint(0, 10)
+            stress = random.randint(0, 10)
+            self.player = Player(self, idx+5, idx+12, [health, wisdom, stress], player)
 
         self.tile_map_creator = CreateTilemap
         # self.createTilemap()
@@ -130,14 +143,20 @@ class Game:
         intro = True
         title = self.font.render('BnD', True, BLACK)
         title_rect = title.get_rect(x=self.screen.get_width() / 3, y=self.screen.get_width() / 3)
+        party_text_surface = pygame.Surface((100, 100))
+        party_text_surface.fill(BLACK)
+        party_text_display = self.font.render('Party Members:'+"\n".join(self.selected_characters_to_play), True, BLACK)
+        party_text_display_rect = party_text_display.get_rect(x=400, y=0)
+        party_text_surface.blit(party_text_display, party_text_display_rect)
         self.character_select_id = 0
-        character_selection_list = ['Alfred', 'Ravamora', 'Winston', 'Kyle']
-        self.selected_character_name = character_selection_list[self.character_select_id]
-        self.selected_character_display = self.font.render(("Playing As: " + self.selected_character_name), True, BLACK)
+        character_select_from_list = ['Anthor', 'Ravamoira', 'Shawnathan', 'Kyle']
+        self.selected_character_name = character_select_from_list[self.character_select_id]
+        self.selected_character_display = self.font.render(("Add to Party: " + self.selected_character_name), True, BLACK)
         self.selected_character_display_rect = self.selected_character_display.get_rect(x=self.screen.get_width() / 2,
                                                                                         y=self.screen.get_width() / 5)
         play_button = Button(10, 50, 100, 50, WHITE, BLACK, 'Play', 32)
         cycle_character_button = Button(10, 120, 300, 50, WHITE, BLACK, 'Toggle Character', 32)
+        add_character_to_party_button = Button(10, 180, 300, 50, WHITE, BLACK, 'Add Character to Party',32)
         while intro:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -148,16 +167,28 @@ class Game:
             if play_button.is_pressed(mouse_pos, mouse_pressed):
                 intro = False
                 # character_selected = 1
-                g.new(self.character_select_id)
+                self.selected_characters_to_play
+                g.new(self.selected_characters_to_play)
+            if add_character_to_party_button.is_pressed(mouse_pos, mouse_pressed):
+                print("cycling character on party list")
+                g.character_selected(self.character_select_id)
+                # build string for party list
+                temp_party_text = ""
+                for character in self.selected_characters_to_play:
+                    temp_party_text += "\n"+str(character_select_from_list[character])
+
+                party_text_display = self.font.render('Party Members:' + temp_party_text,
+                                                      True, BLACK)
+
             if cycle_character_button.is_pressed(mouse_pos, mouse_pressed):
                 # get the next character
                 self.character_select_id += 1
-                if self.character_select_id > len(character_selection_list) - 1:
+                if self.character_select_id > len(character_select_from_list) - 1:
                     # round-robin
                     self.character_select_id = 0
-                    self.selected_character_name = character_selection_list[self.character_select_id]
+                    self.selected_character_name = character_select_from_list[self.character_select_id]
                 else:
-                    self.selected_character_name = character_selection_list[self.character_select_id]
+                    self.selected_character_name = character_select_from_list[self.character_select_id]
 
                 # update the character display
                 self.selected_character_display = self.font.render(("Playing As: " + self.selected_character_name),
@@ -167,6 +198,8 @@ class Game:
             self.screen.blit(title, title_rect)
             self.screen.blit(play_button.image, play_button.rect)
             self.screen.blit(cycle_character_button.image, cycle_character_button.rect)
+            self.screen.blit(add_character_to_party_button.image, add_character_to_party_button.rect)
+            self.screen.blit(party_text_display, party_text_display_rect)
             self.screen.blit(self.selected_character_display, self.selected_character_display_rect)
             self.clock.tick(FPS/6)
             pygame.display.update()

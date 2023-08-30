@@ -1,9 +1,9 @@
+import math
+
 import pygame
 
 from Character.StatusDisplay import StatusDisplay
 from values.config import *
-import math
-import random
 
 
 class Player(pygame.sprite.Sprite):
@@ -72,7 +72,7 @@ class Player(pygame.sprite.Sprite):
             self.game.character_spritesheet[self.selected_character].get_sprite(32, 96, self.width, self.height),
             self.game.character_spritesheet[self.selected_character].get_sprite(64, 96, self.width, self.height)]
 
-        self.status = {'health': 8, 'wisdom': 7, 'stress': 6, 'speed': 50}
+        self.status = {'health': self.health, 'wisdom': self.wisdom, 'stress': self.stress, 'speed': 50}
         # pass game, x y coords and the status to apply
         StatusDisplay(self.game, 10, 5, self.status)
 

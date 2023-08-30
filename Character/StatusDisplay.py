@@ -1,4 +1,5 @@
 import pygame
+
 from values.config import *
 import math
 import random
@@ -25,6 +26,7 @@ class StatusDisplay(pygame.sprite.Sprite):
                                      "\nStress: " + str(status['stress']), True, (255, 255, 255))
         self.text_rect = self.text.get_rect(x=0, y=0)
         self.image.blit(self.text, self.text_rect)
+
         self.rect = self.image.get_rect()
         self.rect.x = self.x
         self.rect.y = self.y
