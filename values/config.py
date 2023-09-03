@@ -49,7 +49,7 @@ intmap = [
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 ]
 
-characterMap = [["Anthor", "images/Character Sprite Sheet Collection/Male/Male 09-1.png", 4, 10, 9, 8],
-                ["Ravamoira", "images/Character Sprite Sheet Collection/Female/Female 02-1.png", 6, 12, 9, 8],
+characterMap = [["Anthor", "images/Character Sprite Sheet Collection/Male/Male 09-1.png", 4, 10, 3, 5],
+                ["Ravamoira", "images/Character Sprite Sheet Collection/Female/Female 02-1.png", 6, 12, 7, 9],
                 ["Shawnathan", "images/Character Sprite Sheet Collection/Other/pipo-charachip_otaku01.png", 2, 4, 19, 8],
                 ["Kyle", "images/Character Sprite Sheet Collection/Male/Male 14-1.png", 5, 12, 4, 4]]

@@ -6,7 +6,7 @@ import random
 
 
 class StatusDisplay(pygame.sprite.Sprite):
-    def __init__(self, game, x, y, status):
+    def __init__(self, game, x, y):
         self.font = pygame.font.Font('OpenSans.ttf', 16)
         self.game = game
         self._layer = BLOCK_LAYER
@@ -22,8 +22,17 @@ class StatusDisplay(pygame.sprite.Sprite):
         self.image = pygame.Surface((100, 100))
         self.image.fill(BLACK)  # draw the blackness first
 
-        self.text = self.font.render("Health: " + str(status['health']) + "\nWisdom: " + str(status['wisdom']) +
-                                     "\nStress: " + str(status['stress']), True, (255, 255, 255))
+        self.text = self.font.render(self.game.status_screen_text, True, (255, 255, 255))
+        self.text_rect = self.text.get_rect(x=0, y=0)
+        self.image.blit(self.text, self.text_rect)
+
+        self.rect = self.image.get_rect()
+        self.rect.x = self.x
+        self.rect.y = self.y
+
+    def update(self):
+        self.image.fill(BLACK)  # draw the blackness first
+        self.text = self.font.render(self.game.status_screen_text, True, (255, 255, 255))
         self.text_rect = self.text.get_rect(x=0, y=0)
         self.image.blit(self.text, self.text_rect)
 

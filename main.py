@@ -1,5 +1,6 @@
 from Character import Character as character_generator
 from Character.Player import Player
+from Character import StatusDisplay
 from sprites import *
 from values.config import *
 import sys
@@ -9,41 +10,38 @@ import pygame
 
 class Game:
     def __init__(self):
+        self.active_player = None
+        self.update_info_display = False
         pygame.init()
+        self.all_loaded_characters = []
+        self.selected_party = []
         self.screen = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
         pygame.display.set_caption("BnD")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font('OpenSans.ttf', 32)
         self.running = True
-
+        self.active_player_index = -1
         # load the characters in
-        self.character_file_list = []
+        # self.character_file_list = []
         self.character_select_name_from_list = []
         self.load_characters()
 
-        # Character Sprites Files List
-        # self.character_file_list = ['images/Character Sprite Sheet Collection/Male/Male 09-1.png',
-        #                        'images/Character Sprite Sheet Collection/Female/Female 02-1.png',
-        #                        'images/Character Sprite Sheet Collection/Other/pipo-charachip_otaku01.png',
-        #                        'images/Character Sprite Sheet Collection/Male/Male 14-1.png']
         terrain_file_list = ['img/terrain.png',
                              'images/tilesets/3.png',
                              'images/tilesets/1.png']
         self.terrain_spritesheet = []
-        self.character_spritesheet = []
-        # turn character spritesheet into a list
-        for count, character in enumerate(self.character_file_list):
-            self.character_spritesheet.append(Spritesheet(character))
         # turn terrain spritesheet into a list
         for count, terrain in enumerate(terrain_file_list):
             self.terrain_spritesheet.append(Spritesheet(terrain))
         self.selected_characters_to_play = []
-        # self.terrain_spritesheet = Spritesheet('img/terrain.png')
+
         self.enemy_spritesheet = Spritesheet('img/enemy.png')
         self.attack_spritesheet = Spritesheet('img/attack.png')
-        # self.intro_background = pygame.image.load('img/introbackground.png')
+
         self.intro_background = pygame.image.load('images/bnd background large.jpeg')
         self.go_background = pygame.image.load('img/gameover.png')
+        self.status_screen_text = ""
+
 
     def character_selected(self, selected_character):
         if selected_character not in self.selected_characters_to_play:
@@ -53,7 +51,7 @@ class Game:
             # remove character
             self.selected_characters_to_play.remove(selected_character)
 
-    def new(self, selected_players):
+    def new(self):
         # a new game starts
         self.playing = True
         # will contain all the sprites in the game Characters, walls everything
@@ -62,15 +60,20 @@ class Game:
         self.enemies = pygame.sprite.LayeredUpdates()
         self.attacks = pygame.sprite.LayeredUpdates()
 
-        for idx, player in enumerate(selected_players):
-            health = random.randint(0, 10)
-            wisdom = random.randint(0, 10)
-            stress = random.randint(0, 10)
-            self.player = Player(self, idx + 5, idx + 12, [health, wisdom, stress], player)
+        for idx, player in enumerate(self.selected_characters_to_play):
+            self.selected_party.append(Player(self, idx + 5, 12, player))
 
+        # set who the active player is default is first
+        self.active_player = self.selected_party[0]
+
+        self.active_player.is_active_player = True
+        self.turn_tracker()
+        self.update_info_display = True
+        # self.info_display()
+        StatusDisplay.StatusDisplay(self, 10, 10)
+        # self.status_display.update_status_display()
+        self.clock.tick(60.0)
         self.tile_map_creator = CreateTilemap
-        # self.createTilemap()
-        # self.createTilemap = self.CreateTileMap.createTilemap(self)
         self.tile_map_creator.CreateTileMap.createTilemap(self)
 
     def events(self):
@@ -89,6 +92,9 @@ class Game:
                         Attack(self, self.player.rect.x - TILE_SIZE, self.player.rect.y)
                     if self.player.facing == 'right':
                         Attack(self, self.player.rect.x + TILE_SIZE, self.player.rect.y)
+                if event.key == pygame.K_t:
+                    # set the next player as active
+                    g.turn_tracker()
 
     def update(self):
         # game loop updates
@@ -142,8 +148,7 @@ class Game:
         title_rect = title.get_rect(x=self.screen.get_width() / 3, y=self.screen.get_width() / 3)
         party_text_surface = pygame.Surface((100, 100))
         # party_text_surface.fill(BLACK)
-        party_text_display = self.font.render('Party Members:' + "\n".join(self.selected_characters_to_play), True,
-                                              BLACK)
+        party_text_display = self.font.render('Party Members:', True, BLACK)
         party_text_display_rect = party_text_display.get_rect(x=400, y=0)
         party_text_surface.blit(party_text_display, party_text_display_rect)
         self.character_select_id = 0
@@ -166,15 +171,15 @@ class Game:
             if play_button.is_pressed(mouse_pos, mouse_pressed):
                 intro = False
                 # character_selected = 1
-                self.selected_characters_to_play
-                g.new(self.selected_characters_to_play)
+                # self.selected_characters_to_play
+                g.new()
             if add_character_to_party_button.is_pressed(mouse_pos, mouse_pressed):
                 print("cycling character on party list")
-                g.character_selected(self.character_select_id)
+                g.character_selected(self.all_loaded_characters[self.character_select_id])
                 # build string for party list
                 temp_party_text = ""
                 for character in self.selected_characters_to_play:
-                    temp_party_text += "\n" + str(self.character_select_name_from_list[character])
+                    temp_party_text += "\n" + str(character.get('name'))
 
                 party_text_display = self.font.render('Party Members:' + temp_party_text,
                                                       True, BLACK)
@@ -204,14 +209,37 @@ class Game:
             pygame.display.update()
 
     def load_characters(self):
+        self.all_loaded_characters = []
         for character in characterMap:
-
             # apply dict to values
             character = character_generator.Character.create_new_character(self, character)
+            self.all_loaded_characters.append(character)
             # load the spritesheets in
-            self.character_file_list.append(character.get('sprite_file'))
+            # self.character_file_list.append(character.get('sprite_file'))
             # build name list for intro
             self.character_select_name_from_list.append(character.get('name'))
+
+    def turn_tracker(self):
+        # cycle through whose turn it is
+        # set old to false and next one to true
+        # self.selected_party[self.active_player_index].is_active_player = False
+
+        self.active_player.is_active_player = False
+
+        if self.active_player_index+1>len(self.selected_party)-1:
+            # round-robin back to beginning
+            self.active_player_index = 0
+            self.active_player = self.selected_party[self.active_player_index]
+            self.active_player.is_active_player = True
+            self.active_player.beginning_location = (self.active_player.rect.x, self.active_player.rect.y)
+            self.status_screen_text = "Health: " + str(self.active_player.status['health']) + "\nWisdom: " + str(self.active_player.status['wisdom']) + "\nStress: " + str(self.active_player.status['stress'])
+        else:
+            # increment the active player
+            self.active_player_index += 1
+            self.active_player = self.selected_party[self.active_player_index]
+            self.active_player.is_active_player = True
+            self.active_player.beginning_location = (self.active_player.rect.x, self.active_player.rect.y)
+            self.status_screen_text = "Health: " + str(self.active_player.status['health']) + "\nWisdom: " + str(self.active_player.status['wisdom']) + "\nStress: " + str(self.active_player.status['stress'])
 
 
 g = Game()
