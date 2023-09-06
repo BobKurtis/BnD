@@ -1,5 +1,5 @@
 import math
-
+import numpy
 import pygame
 import sprites
 from Character.StatusDisplay import StatusDisplay
@@ -151,27 +151,31 @@ class Player(pygame.sprite.Sprite):
         if hits:
             # hits = pygame.sprite.spritecollide(self, self.game.blocks, False, pygame.sprite.collide_mask)
             #hits = pygame.sprite.collide_mask(self.mask, hits[0].mask)
+
             for idx, x in enumerate(hits):
                 offset_x = hits[idx].rect.x - self.rect.x
                 offset_y = hits[idx].rect.y - self.rect.y
-                self.jitter = hits[idx].mask.overlap(self.mask, (offset_x, offset_y))
-                if self.jitter is not None:
-                    if offset_x > 0:
-                        # jitter to the left
-                        print("Jitter left" + str(offset_x) + "," + str(offset_y))
-                        self.x_change -= 1
-                    if offset_x < 0:
-                        # jitter to the right
-                        print("Jitter right" + str(offset_x) + "," + str(offset_y))
-                        self.x_change += 1
-                    if offset_y > 0:
-                        # jitter up
-                        print("Jitter up" + str(offset_x) + "," + str(offset_y))
-                        self.y_change -= 1
-                    if offset_y < 0:
-                        # jitter down
-                        print("Jitter down" + str(offset_x) + "," + str(offset_y))
-                        self.y_change += 1
+                dx = self.mask.overlap_area(hits[idx].mask, (offset_x + 1, offset_y)) - self.mask.overlap_area(hits[idx].mask, (offset_x - 1, offset_y))
+                dy = self.mask.overlap_area(hits[idx].mask, (offset_x, offset_y + 1)) - self.mask.overlap_area(hits[idx].mask, (offset_x, offset_y - 1))
+
+                print(f"Dx:{dx} and Dy:{dy}")
+
+                if dx < 0:
+                    # jitter to the left
+                    print("Jitter left" + str(dx) + "," + str(dy))
+                    self.x_change -= 1  # maybe jitter the x offset?
+                if dx > 0:
+                    # jitter to the right
+                    print("Jitter right" + str(dx) + "," + str(dy))
+                    self.x_change += 1
+                if dy < 0:
+                    # jitter up
+                    print("Jitter up" + str(dx) + "," + str(dy))
+                    self.y_change -= 1
+                if dy > 0:
+                    # jitter down
+                    print("Jitter down" + str(dx) + "," + str(dy))
+                    self.y_change += 1
 
                 # match direction:
                 #     case "right":
@@ -294,4 +298,3 @@ class Player(pygame.sprite.Sprite):
                 if self.animation_loop >= 3:
                     self.animation_loop = 1
                     self.check_distance = True
-
