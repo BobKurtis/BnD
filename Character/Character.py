@@ -6,7 +6,8 @@ class Character:
             speed=attributes_list[2],
             health=attributes_list[3],
             wisdom=attributes_list[4],
-            stress=attributes_list[5]
+            stress=attributes_list[5],
+            attackRange=attributes_list[6]
 
         )
         return character

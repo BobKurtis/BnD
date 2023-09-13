@@ -1,6 +1,7 @@
 from Character import Character as character_generator
 from Character.Player import Player
 from Character import StatusDisplay
+from Character import AttackRing
 from sprites import *
 from values.config import *
 import sys
@@ -70,7 +71,8 @@ class Game:
         self.turn_tracker()
         self.update_info_display = True
         # self.info_display()
-        StatusDisplay.StatusDisplay(self, 10, 10)
+        StatusDisplay.StatusDisplay(self, 0, 27)
+        AttackRing.AttackRing(self, 10, 20)
         # self.status_display.update_status_display()
         self.clock.tick(60.0)
         self.tile_map_creator = CreateTilemap
@@ -200,7 +202,9 @@ class Game:
 
             self.screen.blit(self.intro_background, (0, 0))
             self.screen.blit(title, title_rect)
-            self.screen.blit(play_button.image, play_button.rect)
+            # don't display play button if there aren't any players
+            if len(self.selected_characters_to_play)>0:
+                self.screen.blit(play_button.image, play_button.rect)
             self.screen.blit(cycle_character_button.image, cycle_character_button.rect)
             self.screen.blit(add_character_to_party_button.image, add_character_to_party_button.rect)
             self.screen.blit(party_text_display, party_text_display_rect)

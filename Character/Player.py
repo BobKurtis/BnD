@@ -23,13 +23,14 @@ class Player(pygame.sprite.Sprite):
         self.x_change = 0
         self.y_change = 0
         self.is_active_player = False
-        self.check_distance = False
+        self.distance_travelled = 0
 
         self.facing = 'down'
         self.health = player.get('health')
         self.wisdom = player.get('wisdom')
         self.stress = player.get('stress')
         self.speed = player.get('speed')
+        self.attack_range = player.get('attackRange')
         self.max_travel = ((self.speed*TILE_SIZE)/2)
         self.selected_character = player
         self.selected_character_spritesheet = (sprites.Spritesheet(self.selected_character.get('sprite_file')))
@@ -61,6 +62,10 @@ class Player(pygame.sprite.Sprite):
         self.beginning_location = (self.rect.x, self.rect.y)
         # set up mask for pixel perfect collision detection
         self.mask = pygame.mask.from_surface(self.image)
+        # self.mask = pygame.mask.from_surface(self.image)
+        # mask -> surface
+        # self.image = self.mask.to_surface()
+
         # self.mask_size = self.mask.get_size()
         # set our animations
         self.down_animations = [
@@ -101,19 +106,24 @@ class Player(pygame.sprite.Sprite):
             # self.collide_blocks('x')
             self.rect.y += self.y_change
 
+            # pygame.draw.ellipse(self.image, BLUE, self.rect, width=15)
             # calculate distance travelled
-            # if self.check_distance:
-            #     distance = math.dist(self.beginning_location, (self.rect.x, self.rect.y))
-            #     if distance > self.max_travel:
-            #         # we've walked the max amount so undo the changes
-            #         self.rect.x -= self.x_change
-            #         self.rect.y -= self.y_change
-            #
-            # self.check_distance = False
+
+            self.distance_travelled = math.dist(self.beginning_location, (self.rect.x, self.rect.y))
+            if self.distance_travelled > self.max_travel:
+                # we've walked the max amount so undo the changes
+                distance_overage = self.max_travel - self.distance_travelled
+                self.rect.x -= self.x_change
+                self.rect.y -= self.y_change
+
             # print(f"Distance travelled: {distance}")
+
+
             # check for collision along y-axis
             # self.collide_blocks('y')
             self.animate()
+            # self.mask = pygame.mask.from_surface(self.image)
+            # self.image = self.mask.to_surface(unsetcolor=BLUE, setcolor=BLACK)
             self.x_change = 0
             self.y_change = 0
 
@@ -149,9 +159,6 @@ class Player(pygame.sprite.Sprite):
     def collide_block_bool(self):
         hits = pygame.sprite.spritecollide(self, self.game.blocks, False, pygame.sprite.collide_mask)
         if hits:
-            # hits = pygame.sprite.spritecollide(self, self.game.blocks, False, pygame.sprite.collide_mask)
-            #hits = pygame.sprite.collide_mask(self.mask, hits[0].mask)
-
             for idx, x in enumerate(hits):
                 offset_x = hits[idx].rect.x - self.rect.x
                 offset_y = hits[idx].rect.y - self.rect.y
@@ -162,55 +169,21 @@ class Player(pygame.sprite.Sprite):
 
                 if dx < 0:
                     # jitter to the left
-                    print("Jitter left" + str(dx) + "," + str(dy))
+                    print("Jitter left")
                     self.x_change -= 1  # maybe jitter the x offset?
                 if dx > 0:
                     # jitter to the right
-                    print("Jitter right" + str(dx) + "," + str(dy))
+                    print("Jitter right")
                     self.x_change += 1
                 if dy < 0:
                     # jitter up
-                    print("Jitter up" + str(dx) + "," + str(dy))
+                    print("Jitter up")
                     self.y_change -= 1
                 if dy > 0:
                     # jitter down
-                    print("Jitter down" + str(dx) + "," + str(dy))
+                    print("Jitter down")
                     self.y_change += 1
 
-                # match direction:
-                #     case "right":
-                #         offset = (int(hits[0].x), int(hits[0].y))
-                #         # self.thing = self.mask.overlap(hits[0].mask, (0,0))
-                #         self.jitter = hits[0].mask.overlap(self.mask, (0, 0))
-                #         if self.jitter is not None:
-                #             print("Jitter Left")
-                #             # bump the character to the left
-                #             self.x_change -= 6
-                #     case "left":
-                #         offset = (int(hits[0].x), int(hits[0].y))
-                #         self.jitter = hits[0].mask.overlap(self.mask, (0, 0))
-                #         if self.jitter is not None:
-                #             print("Jitter Right")
-                #             # bump the character to the left
-                #             self.x_change += 3
-                #             # update the mask
-                #     case "up":
-                #         offset = (int(hits[0].x), int(hits[0].y))
-                #         self.jitter = hits[0].mask.overlap(self.mask, (0, 0))
-                #
-                #         if self.jitter is not None:
-                #             print("Jitter Down")
-                #             # bump the character to the left
-                #             self.y_change += 3
-                #     case "down":
-                #         offset = (int(hits[0].x), int(hits[0].y))
-                #         self.jitter = hits[0].mask.overlap(self.mask, (0, 0))
-                #
-                #         if self.jitter is not None:
-                #             print("Jitter Up")
-                #             # bump the character to the left
-                #             self.y_change -= 2
-            # return hits
 
     def collide_blocks(self, direction):
         if direction == "x":
@@ -298,3 +271,6 @@ class Player(pygame.sprite.Sprite):
                 if self.animation_loop >= 3:
                     self.animation_loop = 1
                     self.check_distance = True
+
+        # self.mask = pygame.mask.from_surface(self.image)
+        # self.image = self.mask.to_surface()
