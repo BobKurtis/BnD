@@ -110,13 +110,15 @@ class Player(pygame.sprite.Sprite):
             # calculate distance travelled
 
             self.distance_travelled = math.dist(self.beginning_location, (self.rect.x, self.rect.y))
+
             if self.distance_travelled > self.max_travel:
                 # we've walked the max amount so undo the changes
-                distance_overage = self.max_travel - self.distance_travelled
-                self.rect.x -= self.x_change
-                self.rect.y -= self.y_change
+                while (self.max_travel - self.distance_travelled) < 0:
+                    self.rect.x -= numpy.sign(self.x_change)*1
+                    self.rect.y -= numpy.sign(self.y_change)*1
+                    self.distance_travelled = math.dist(self.beginning_location, (self.rect.x, self.rect.y))
+                    print(f"Distance travelled: {self.distance_travelled}")
 
-            # print(f"Distance travelled: {distance}")
 
 
             # check for collision along y-axis
@@ -274,3 +276,60 @@ class Player(pygame.sprite.Sprite):
 
         # self.mask = pygame.mask.from_surface(self.image)
         # self.image = self.mask.to_surface()
+
+
+# structure to represent a co-ordinate
+# point
+
+
+class Point:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+
+
+# Function to print pair of points at
+# distance 'l' and having a slope 'm'
+# from the source
+
+
+def print_points(source, l, m):
+    # m is the slope of line, and the
+    # required Point lies distance l
+    # away from the source Point
+    a = Point(0, 0)
+    b = Point(0, 0)
+
+    # slope is 0
+    if m == 0:
+        a.x = source.x + l
+        a.y = source.y
+
+        b.x = source.x - l
+        b.y = source.y
+
+    # if slope is infinite
+    elif math.isfinite(m) is False:
+        a.x = source.x
+        a.y = source.y + l
+
+        b.x = source.x
+        b.y = source.y - l
+    else:
+        dx = (l / math.sqrt(1 + (m * m)))
+        dy = m * dx
+        a.x = source.x + dx
+        a.y = source.y + dy
+        b.x = source.x - dx
+        b.y = source.y - dy
+
+    # print the first Point positive distance
+    print(f"{a.x}, {a.y}")
+
+    # print the second Point negative distance
+    print(f"{b.x}, {b.y}")
+    # may dictionary of points
+    d = dict()
+    d['neg'] = b
+    d['pos'] = a
+    return d
